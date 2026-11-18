@@ -2,6 +2,7 @@
 
 ## 0.3.0
 
+- 显示名由 `DeepSeek Harness` 改为 `DeepSeek Harness Sidebar Embed`（显示名同样要求全商店唯一，原名已被 `weinibuliu.dsh-vsc` 占用）。
 - 扩展在 Marketplace 上的名字改为 `dsh-vscode-extension`（`dsh-vscode` 已被 `Jager.dsh-vscode` 占用，Marketplace 的扩展名全局唯一），商店 id 为 `Aurumjin.dsh-vscode-extension`；GitHub 仓库名仍是 `Aujin/dsh-vscode`。
 
 - **自动发现正在运行的 `dsh web`**：扩展不再假定主机跑在 `3080`，而是依次尝试

@@ -81,6 +81,28 @@ Please use a different 'name' in the package.json file
 > 换名字的坑：`vsce` 会把扩展名写进已安装的扩展 id，改名后要
 > `code --uninstall-extension aurumjin.<旧名>` 再装新的，否则两份同时存在。
 
+### 2.2 显示名（`displayName`）也必须全商店唯一
+
+扩展名改掉之后，上传还会被拒 —— 因为 **显示名同样要求全商店唯一**。
+本项目最初用 `DeepSeek Harness`，这个显示名已被 `weinibuliu.dsh-vsc` 占用，
+现在改为 **`DeepSeek Harness Sidebar Embed`**（已确认无人使用）。
+
+查重不需要登录，用商店的公开查询接口：
+
+```powershell
+$uri = 'https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery?api-version=7.2-preview.1'
+$body = @{
+  filters   = @(@{ criteria = @(@{ filterType = 2; value = 'deepseek' })
+                   pageNumber = 1; pageSize = 100; sortBy = 0; sortOrder = 0 })
+  assetTypes = @(); flags = 914
+} | ConvertTo-Json -Depth 6
+(Invoke-RestMethod -Uri $uri -Method Post -ContentType 'application/json' -Body $body).results[0].extensions |
+  ForEach-Object { "{0}.{1} | {2}" -f $_.publisher.publisherName, $_.extensionName, $_.displayName }
+```
+
+对照结果检查两种冲突：`extensionName` 完全相等（扩展名被占）、
+`displayName` 完全相等（显示名被占）。
+
 ---
 
 ## 3. 方案 A（推荐）：GitHub Actions + 可信发布
