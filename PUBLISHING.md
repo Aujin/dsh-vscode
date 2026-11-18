@@ -239,7 +239,10 @@ GitHub 明确说明这类锁定**只能提工单人工复核**。
 
 ### 8.2 提工单（人工复核）
 
-从 <https://github.com/settings/billing> 页面直接提单，附上：
+打开 **GitHub Support 工单入口** <https://support.github.com/contact>
+（`github.com/settings/billing` 页面上通常**没有**提单入口，别在那里找；
+选择产品 "GitHub.com"，类别选 "Billing" / "Billing and payments" 或
+"Account access"，然后提交）。附上下面这段：
 
 ```
 Subject: Account billing lock — request manual review / move account to GitHub Free
