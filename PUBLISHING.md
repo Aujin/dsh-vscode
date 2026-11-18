@@ -189,3 +189,73 @@ vsce show <publisher>.<name>            # 查看已发布版本
 - [ ] `icon` 是 PNG（Marketplace 不接受 SVG 作为扩展大图标；本项目用 `media/dsh.png`
       作为 128×128 的大图标，边栏图标仍是 `media/dsh.svg`）
 - [ ] 在另一台机器上安装 `.vsix` 试跑：`code --install-extension dsh-vscode-<version>.vsix`
+
+---
+
+## 8. 应急路径：GitHub 账号被账单锁定时怎么发布
+
+GitHub Actions 的运行需要账号在计费上是"干净"的。账号一旦被**账单锁定**，
+所有 workflow 都会在启动 runner 之前直接失败：
+
+```
+The job was not started because your account is locked due to a billing issue.
+```
+
+### 8.1 先分清两类锁定
+
+| 症状 | 含义 | 处理 |
+| --- | --- | --- |
+| Billing 页显示未结清账单 / 卡片失效 / 达到 spending limit | 普通扣款失败 | 更新支付方式或提高预算上限，等 GitHub 自动解锁（最长 24 小时） |
+| 更新支付方式时提示 *"the billing information supplied is ineligible for transactions with GitHub due to government restrictions"* | **贸易管制（出口管制）合规筛查**拒绝了该付款方式 | 换用 GitHub 认可的付款方式，或**提工单请人工复核** |
+
+第二种不是代码问题，也不是账号被处罚，只是"付款方式不在 GitHub 接受的范围内"。
+同一个付款方式重新提交会得到同样的拒绝；GitHub 的公开文档给出的自助路径只有两条：
+**用可接受的付款方式重新授权**，或者**降级到 GitHub Free**；两者都做不到时，
+GitHub 明确说明这类锁定**只能提工单人工复核**。
+
+### 8.2 提工单（人工复核）
+
+从 <https://github.com/settings/billing> 页面直接提单，附上：
+
+```
+Subject: Account billing lock — request manual review / move account to GitHub Free
+
+Hi GitHub Support,
+
+My personal account (login: Aujin) is locked for billing. Every GitHub Actions
+run fails immediately with:
+
+  "The job was not started because your account is locked due to a billing issue."
+
+When I try to update my payment information I get:
+
+  "the billing information supplied is ineligible for transactions with GitHub
+   due to government restrictions"
+
+My use case is a single public repository (Aujin/dsh-vscode) that publishes an
+open-source VS Code extension to the Visual Studio Marketplace via Trusted
+Publishing. Standard GitHub-hosted runners on public repositories are free and
+do not consume paid minutes, so this account does not need a paid plan.
+
+Could you please review the lock and either remove it, or move the account to
+GitHub Free so that Actions can run for this public repository?
+
+Thank you.
+```
+
+### 8.3 不等解锁也能立刻上架
+
+Marketplace 的发布链路走 **Azure DevOps / 微软**，与 GitHub 的账单**完全无关**。
+因此账单锁定**不会阻止上架**，两条替代路径：
+
+1. **网页后台上传（无需 PAT，推荐）**
+   <https://marketplace.visualstudio.com/manage> → 选中 Publisher `Aurumjin` →
+   **Add extension** → 上传 `npm run package` 产出的 `.vsix`。
+   官方文档把这条列为正式的发布方式（"Manually, using `vsce package` … and then
+   uploading it to the Visual Studio Marketplace publisher management page"）。
+2. **本机 PAT 发布**：见第 4 节（Azure DevOps 全局 PAT 在 2026-12-01 前可创建）。
+
+仓库保持 **public + 完整 GPL 源码** 即可满足 Marketplace 的开源要求；
+Trusted Publishing 策略可以先建好，等 Actions 解锁后跑通一次即可激活，
+之后发版就是 `git push tag v*` 自动完成。
+
