@@ -1,0 +1,44 @@
+name: Publish
+
+# 发布到 Visual Studio Marketplace。
+#
+# 使用“可信发布（Trusted Publishing）”：GitHub Actions 通过 OIDC 向 Marketplace
+# 换取一次性凭据，仓库里不需要保存任何 PAT。
+# 对应的策略要在 https://marketplace.visualstudio.com/manage 里创建：
+#   Policy name      : Release workflow
+#   Provider         : GitHub Actions
+#   Repository owner : Aujin
+#   Repository       : dsh-vscode
+#   Workflow         : publish.yml
+#   Environment      : 留空（此工作流不使用 GitHub environment）
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm run build
+
+      - name: Publish to the Visual Studio Marketplace
+        # Trusted Publishing 用 OIDC 换取一次性凭据，这里不需要、也不应该出现 PAT。
+        run: npx @vscode/vsce publish --oidc --allow-missing-repository

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+out/
+*.vsix
+.npm-cache/
+.edge-profile/
+.write-probe.txt
+
+# 探针抓取的本地快照（dsh 的 SPA 产物 / 本机信息），不入库
+probe/bundle-*.js
+probe/boot.json
+probe/dom.html
+probe/edge.err.txt
+probe/netstat-sample.txt

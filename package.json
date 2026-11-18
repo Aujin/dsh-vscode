@@ -1,0 +1,191 @@
+{
+  "name": "dsh-vscode",
+  "displayName": "DeepSeek Harness",
+  "description": "把 DeepSeek Harness (dsh) 嵌入 VS Code 右侧（辅助）边栏：工作区可复用当前打开的文件夹或新建文件夹，会话与 dsh web 实时同步。",
+  "version": "0.3.0",
+  "publisher": "Aurumjin",
+  "license": "GPL-3.0-or-later",
+  "icon": "media/dsh.png",
+  "homepage": "https://github.com/Aujin/dsh-vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Aujin/dsh-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Aujin/dsh-vscode/issues"
+  },
+  "engines": {
+    "vscode": "^1.146.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "deepseek",
+    "harness",
+    "dsh",
+    "agent",
+    "chat"
+  ],
+  "galleryBanner": {
+    "color": "#1F2430",
+    "theme": "dark"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "secondarySidebar": [
+        {
+          "id": "dsh",
+          "title": "DeepSeek Harness",
+          "icon": "media/dsh.svg"
+        }
+      ]
+    },
+    "views": {
+      "dsh": [
+        {
+          "type": "webview",
+          "id": "dsh.chat",
+          "name": "Harness",
+          "icon": "media/dsh.svg",
+          "contextualTitle": "DeepSeek Harness"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "dsh.showPanel",
+        "title": "DeepSeek Harness: 在右侧边栏打开",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.bindCurrentFolder",
+        "title": "DeepSeek Harness: 绑定当前打开的文件夹",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.createWorkspaceFolder",
+        "title": "DeepSeek Harness: 新建工作区文件夹并绑定",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.pickSession",
+        "title": "DeepSeek Harness: 打开会话…",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.newSession",
+        "title": "DeepSeek Harness: 在当前工作区新建会话",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.reconnect",
+        "title": "DeepSeek Harness: 重新连接 dsh web",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.unbind",
+        "title": "DeepSeek Harness: 解除目录绑定",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.retireDefaultWorkspace",
+        "title": "DeepSeek Harness: 移除 dsh 主机的默认工作区注册",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.openInBrowser",
+        "title": "DeepSeek Harness: 在浏览器中打开 dsh web",
+        "category": "DeepSeek Harness"
+      },
+      {
+        "command": "dsh.showLogs",
+        "title": "DeepSeek Harness: 显示日志",
+        "category": "DeepSeek Harness"
+      }
+    ],
+    "configuration": {
+      "title": "DeepSeek Harness",
+      "properties": {
+        "dsh.webUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "dsh web 的地址，例如 `http://127.0.0.1:3080`。留空时依次尝试环境变量 `DSH_WEB_URL`、`dsh.autoStartPort`、常用端口（3080/8080/3000），最后扫描本机监听端口，自动发现正在运行的 `dsh web`。"
+        },
+        "dsh.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "当没有正在运行的 dsh web 时，自动以 `dsh web --no-open` 启动一个。"
+        },
+        "dsh.autoStartPort": {
+          "type": "number",
+          "default": 3080,
+          "description": "自动启动 dsh web 时使用的端口（0 表示由系统分配）。"
+        },
+        "dsh.workspaceMode": {
+          "type": "string",
+          "enum": [
+            "currentFolder",
+            "newFolder",
+            "none"
+          ],
+          "enumDescriptions": [
+            "复用 VS Code 当前打开的第一个文件夹",
+            "在启动时新建一个工作区文件夹",
+            "不自动绑定，稍后手动绑定"
+          ],
+          "default": "currentFolder",
+          "description": "边栏会话使用的目录来源。"
+        },
+        "dsh.newFolderParent": {
+          "type": "string",
+          "default": "",
+          "description": "新建工作区文件夹的父目录。留空时使用当前文件夹的上级目录，没有当前文件夹时使用用户文档目录。"
+        },
+        "dsh.newFolderName": {
+          "type": "string",
+          "default": "dsh-workspace",
+          "description": "新建工作区文件夹的默认名称。"
+        },
+        "dsh.reuseExistingSession": {
+          "type": "boolean",
+          "default": true,
+          "description": "绑定目录时复用该目录中已有的会话（而不是每次都新建）。"
+        },
+        "dsh.pollIntervalMs": {
+          "type": "number",
+          "default": 3000,
+          "description": "轮询 dsh 主机会话列表的间隔（毫秒），用于保持边栏状态同步。"
+        },
+        "dsh.executablePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "dsh 的可执行文件或入口脚本路径，例如 `C:\\Users\\you\\AppData\\Roaming\\fnm\\node-versions\\v26.13.0\\installation\\dsh.cmd` 或 `.../node_modules/@deepseek-ai/dsh/lib/bin.js`。留空时插件会自动搜索 fnm / nvm / npm 全局目录 / 官方安装包 / volta 等常见安装位置。"
+        },
+        "dsh.retireDefaultWorkspace": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "绑定目录后，移除 dsh 主机在「文档」目录下自动创建的默认工作区注册（目录与会话日志都会保留）。关闭后主机可能继续显示那个默认工作区。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "node build.mjs --noEmit",
+    "package": "vsce package --no-dependencies --allow-missing-repository",
+    "vscode:prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/vscode": "^1.146.0",
+    "@vscode/vsce": "^3.2.1",
+    "typescript": "^5.7.3"
+  }
+}
