@@ -56,7 +56,7 @@ npm run package      # 打包成 .vsix（需要 @vscode/vsce）
 安装 `.vsix`：
 
 ```bash
-code --install-extension dsh-vscode-0.2.0.vsix
+code --install-extension dsh-vscode-extension-0.3.0.vsix
 ```
 
 开发调试：

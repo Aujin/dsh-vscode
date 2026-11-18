@@ -27,7 +27,7 @@
 npm install --cache .npm-cache --ignore-scripts   # 沙箱内安装依赖时需要这两个参数
 npm run typecheck
 npm run build
-npm run package            # 生成 dsh-vscode-<version>.vsix
+npm run package            # 生成 dsh-vscode-extension-<version>.vsix
 ```
 
 `package.json` 的 `scripts.package` 已经是：
@@ -56,6 +56,30 @@ npm run package            # 生成 dsh-vscode-<version>.vsix
 
 > 若 `vsce publish` 报 `Publisher 'Aurumjin' does not exist`，说明账号下注册的 id 是
 > 全小写 `aurumjin`（管理页 URL 里就是小写），把 `package.json` 的 `publisher` 改成小写即可。
+
+### 2.1 扩展名（`name`）必须全商店唯一
+
+Marketplace 的扩展 **name 是全局唯一的**（不是只在 publisher 内唯一）。本项目最初想用
+`dsh-vscode`，上传时返回：
+
+```
+The extension 'dsh-vscode' already exists in the Marketplace.
+Please use a different 'name' in the package.json file
+```
+
+占用这个名字的是 `Jager.dsh-vscode`（显示名 "DeepSeek Harness for VS Code"）。
+
+因此本项目的扩展名定为 **`dsh-vscode-extension`**，商店里的完整 id 是
+**`Aurumjin.dsh-vscode-extension`**，页面地址：
+
+<https://marketplace.visualstudio.com/items?itemName=Aurumjin.dsh-vscode-extension>
+
+> 注意区分两处名字：
+> - **扩展名**（Marketplace 唯一）：`dsh-vscode-extension` → id `Aurumjin.dsh-vscode-extension`
+> - **GitHub 仓库名**：`Aujin/dsh-vscode`（可以任意取，不受商店约束）
+>
+> 换名字的坑：`vsce` 会把扩展名写进已安装的扩展 id，改名后要
+> `code --uninstall-extension aurumjin.<旧名>` 再装新的，否则两份同时存在。
 
 ---
 
@@ -120,7 +144,7 @@ git push origin main --tags
 发布成功后扩展地址为：
 
 ```
-https://marketplace.visualstudio.com/items?itemName=Aurumjin.dsh-vscode
+https://marketplace.visualstudio.com/items?itemName=Aurumjin.dsh-vscode-extension
 ```
 
 ---
@@ -188,7 +212,7 @@ vsce show <publisher>.<name>            # 查看已发布版本
 - [ ] `repository` 指向公开仓库，且仓库里是**完整源码**（GPL 要求）
 - [ ] `icon` 是 PNG（Marketplace 不接受 SVG 作为扩展大图标；本项目用 `media/dsh.png`
       作为 128×128 的大图标，边栏图标仍是 `media/dsh.svg`）
-- [ ] 在另一台机器上安装 `.vsix` 试跑：`code --install-extension dsh-vscode-<version>.vsix`
+- [ ] 在另一台机器上安装 `.vsix` 试跑：`code --install-extension dsh-vscode-extension-<version>.vsix`
 
 ---
 

@@ -2,6 +2,8 @@
 
 ## 0.3.0
 
+- 扩展在 Marketplace 上的名字改为 `dsh-vscode-extension`（`dsh-vscode` 已被 `Jager.dsh-vscode` 占用，Marketplace 的扩展名全局唯一），商店 id 为 `Aurumjin.dsh-vscode-extension`；GitHub 仓库名仍是 `Aujin/dsh-vscode`。
+
 - **自动发现正在运行的 `dsh web`**：扩展不再假定主机跑在 `3080`，而是依次尝试
   `dsh.webUrl` → 环境变量 `DSH_WEB_URL` → `dsh.autoStartPort` → 常用端口（3080/8080/3000），
   最后用 `netstat -ano -p TCP`（Windows）/ `ss`/`lsof`（其它平台）扫描本机监听端口，
