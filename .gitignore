@@ -12,3 +12,8 @@ probe/boot.json
 probe/dom.html
 probe/edge.err.txt
 probe/netstat-sample.txt
+probe/dsh-app-icon.png
+probe/whale-preview.html
+probe/whale-big.png
+probe/whale-render.png
+probe/viewbox.mjs
