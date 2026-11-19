@@ -2,7 +2,7 @@
   "name": "dsh-vscode-extension",
   "displayName": "DeepSeek Harness Sidebar Embed",
   "description": "把 DeepSeek Harness (dsh) 嵌入 VS Code 右侧（辅助）边栏：工作区可复用当前打开的文件夹或新建文件夹，会话与 dsh web 实时同步。",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "Aurumjin",
   "license": "GPL-3.0-or-later",
   "icon": "media/dsh.png",
@@ -64,6 +64,12 @@
         "category": "DeepSeek Harness"
       },
       {
+        "command": "dsh.openInEditor",
+        "title": "DeepSeek Harness: 在编辑器标签页中打开",
+        "category": "DeepSeek Harness",
+        "icon": "media/dsh-badge.svg"
+      },
+      {
         "command": "dsh.bindCurrentFolder",
         "title": "DeepSeek Harness: 绑定当前打开的文件夹",
         "category": "DeepSeek Harness"
@@ -109,6 +115,15 @@
         "category": "DeepSeek Harness"
       }
     ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "dsh.openInEditor",
+          "when": "editorIsOpen",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "DeepSeek Harness",
       "properties": {

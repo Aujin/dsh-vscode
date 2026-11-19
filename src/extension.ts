@@ -9,6 +9,7 @@ import { WorkspaceDirectory } from './workspaces'
 import { DshProxy } from './proxy'
 import { DshController } from './controller'
 import { DshViewProvider } from './webviewView'
+import { DshEditorPanel } from './editorPanel'
 
 let host: DshHost | undefined
 
@@ -78,6 +79,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   )
 
+  // Editor tab variant, opened from the badge in the editor title bar.
+  const editorPanel = new DshEditorPanel(controller, logger, context.extensionUri)
+  context.subscriptions.push(editorPanel)
+
   context.subscriptions.push(
     vscode.commands.registerCommand('dsh.showPanel', async () => {
       try {
@@ -86,6 +91,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         logger.warn(`openView failed (${(error as Error).message}), toggling the auxiliary bar`)
         await vscode.commands.executeCommand('workbench.action.toggleAuxiliaryBar')
       }
+    }),
+
+    vscode.commands.registerCommand('dsh.openInEditor', async () => {
+      editorPanel.open()
     }),
 
     vscode.commands.registerCommand('dsh.bindCurrentFolder', async () => {

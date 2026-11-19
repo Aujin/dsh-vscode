@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1
+
+- **编辑区右上角的鲸鱼角标**：像 Codex / Claude Code 一样，编辑器标题栏右上角新增一枚黑色鲸鱼角标，
+  点击后在新标签页里打开 `dsh` 界面（命令 `DeepSeek Harness: 在编辑器标签页中打开`，`dsh.openInEditor`）。
+  标签页图标同样是这枚鲸鱼；标签页与右侧边栏共享同一个 `dsh web` 主机。
+- **换成 dsh 自己的黑色鲸鱼标志**：扩展图标、边栏视图图标、编辑器角标全部改用 DSH 的品牌图形
+  （取自 DSH 前端的 `FISH_LOGO_PATH`，viewBox `0 0 23.16 17.04`），
+  Marketplace 图标改用 DeepSeek Harness 桌面端的应用图标缩放到 128×128。
+- 侧边栏与编辑器标签页共用同一份 webview 渲染代码（`src/webviewHtml.ts`）。
+
 ## 0.3.0
 
 - 显示名由 `DeepSeek Harness` 改为 `DeepSeek Harness Sidebar Embed`（显示名同样要求全商店唯一，原名已被 `weinibuliu.dsh-vsc` 占用）。

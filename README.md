@@ -126,6 +126,18 @@ Windows 的开始菜单启动的 VS Code 只继承**系统 PATH**，看不到 `f
 命令面板里还有 `DeepSeek Harness: 在右侧边栏打开` 等命令，其中包括
 `DeepSeek Harness: 移除 dsh 主机的默认工作区注册`（手动清理主机自带的 `default-workspace`）。
 
+### 编辑器右上角的鲸鱼角标
+
+和 Codex、Claude Code 一样，编辑区标题栏右上角有一枚 **黑色鲸鱼角标**
+（就是 `dsh` 自己的品牌图形，直接取自 DSH 前端的 `FISH_LOGO_PATH`）：
+
+- 点击角标会在编辑器里 **新开一个标签页**，里面就是同一套 `dsh` 界面；
+- 再次点击会聚焦已打开的那个标签页；
+- 标签页标题图标同样是这枚鲸鱼；
+- 命令：`DeepSeek Harness: 在编辑器标签页中打开`（`dsh.openInEditor`）。
+
+边栏与标签页共享同一个 `dsh web` 主机，会话状态完全一致。
+
 ### 快捷键建议
 
 `keybindings.json`：
