@@ -108,6 +108,27 @@ export class DshProxy {
 
     const info = this.getInfo()
     if (!info) {
+      // The host is not connected (yet). A browser navigation gets a readable
+      // placeholder instead of a blank page; API calls keep the plain text.
+      const acceptsHtml = String(request.headers.accept ?? '').includes('text/html')
+      if (acceptsHtml) {
+        const page = `<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
+<title>DeepSeek Harness</title><style>
+body{font-family:var(--vscode-font-family,system-ui);background:#1f1f1f;color:#cccccc;padding:24px;line-height:1.6}
+h1{font-size:16px;margin:0 0 12px}code{background:#333;padding:1px 5px;border-radius:3px}
+</style></head><body>
+<h1>正在连接 dsh web …</h1>
+<p>还没有连上 <code>dsh web</code>。扩展会自己找：设置 <code>dsh.webUrl</code>、环境变量
+<code>DSH_WEB_URL</code>，然后扫描本机监听端口。</p>
+<p>如果本机没有安装：<br>
+<code>npm install -g @deepseek-ai/dsh</code> 然后运行 <code>dsh web</code><br>
+或安装桌面应用：<a href="https://harness.deepseek.com">https://harness.deepseek.com</a><br>
+也可以在设置里填写 <code>dsh.remoteUrl</code> 连接远程实例。</p>
+</body></html>`
+        response.writeHead(503, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+        response.end(page)
+        return
+      }
       response.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' })
       response.end('dsh web 尚未连接。')
       return

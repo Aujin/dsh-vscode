@@ -60,6 +60,10 @@ export class DshController implements vscode.Disposable {
     readonly logger: Logger,
     private readonly proxyUrl: () => string,
   ) {
+    // The proxy is already listening when the controller is created, so the
+    // sidebar can render the embedded SPA right away - even before the host
+    // itself was found.
+    this.state = { ...this.state, proxyUrl: this.proxyUrl() }
     directory.onDidChange((workspaces) => this.update({ workspaces }))
   }
 

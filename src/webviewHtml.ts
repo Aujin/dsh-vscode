@@ -81,7 +81,13 @@ const WEBVIEW_SCRIPT = String.raw`
           if (hostDefault) parts.push('主机默认工作区仍存在');
           setStatus(parts.join(' · '), 'ready');
           pathLabel.title = (bound || '') + ' · ' + sessions.length + ' 个会话';
-          if (!hostReady) {
+          var proxyUrl = state && state.proxyUrl;
+          if (proxyUrl && frame.src.indexOf(proxyUrl) !== 0) {
+            // The frame was rendered before the proxy URL was known (the
+            // sidebar can resolve before the host was found) or the proxy was
+            // restarted: point the frame at the current proxy.
+            frame.src = proxyUrl + '/';
+          } else if (!hostReady) {
             // The frame was rendered while dsh web was not reachable yet: reload
             // it so the SPA boots against a live host.
             hostReady = true;
