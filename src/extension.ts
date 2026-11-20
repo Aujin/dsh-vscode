@@ -122,6 +122,56 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     }),
 
+    vscode.commands.registerCommand('dsh.workspaceMenu', async () => {
+      const bound = controller.current.boundPath
+      const folders = vscode.workspace.workspaceFolders ?? []
+      const current = folders[0]?.uri.fsPath
+      const items: Array<vscode.QuickPickItem & { command: string }> = []
+      if (current) {
+        items.push({
+          label: '$(folder-active) 绑定当前文件夹',
+          description: current,
+          command: 'dsh.bindCurrentFolder',
+        })
+      }
+      items.push({
+        label: '$(folder-opened) 选择其它文件夹…',
+        command: 'dsh.pickFolder',
+      })
+      items.push({
+        label: '$(new-folder) 新建工作区文件夹…',
+        command: 'dsh.createWorkspaceFolder',
+      })
+      if (bound) {
+        items.push({
+          label: '$(close) 解除绑定',
+          description: bound,
+          command: 'dsh.unbind',
+        })
+      }
+      const picked = await vscode.window.showQuickPick(items, { placeHolder: '工作区' })
+      if (picked) await vscode.commands.executeCommand(picked.command)
+    }),
+
+    vscode.commands.registerCommand('dsh.pickFolder', async () => {
+      const picked = await vscode.window.showOpenDialog({
+        canSelectFiles: false,
+        canSelectFolders: true,
+        canSelectMany: false,
+        openLabel: '绑定此目录',
+      })
+      const target = picked?.[0]?.fsPath
+      if (!target) return
+      try {
+        const result = await controller.bindFolder(target)
+        if (result.sessionId) provider.openSession(result.sessionId)
+        void vscode.window.setStatusBarMessage(`DeepSeek Harness 已绑定 ${target}`, 4000)
+      } catch (error) {
+        logger.error('binding failed', error)
+        void vscode.window.showErrorMessage(`绑定目录失败：${(error as Error).message}`)
+      }
+    }),
+
     vscode.commands.registerCommand('dsh.createWorkspaceFolder', async () => {
       const name = await vscode.window.showInputBox({
         prompt: '新建工作区文件夹名称',

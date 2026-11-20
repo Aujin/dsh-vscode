@@ -26,8 +26,7 @@ const WEBVIEW_SCRIPT = String.raw`
       var vscode = acquireVsCodeApi();
       var frame = document.getElementById('dsh-frame');
       var dot = document.getElementById('dot');
-      var pathLabel = document.getElementById('path');
-      var status = document.getElementById('status');
+      var chip = document.getElementById('workspace');
       var ready = false;
       var pendingSession = null;
       var hostReady = false;
@@ -39,19 +38,16 @@ const WEBVIEW_SCRIPT = String.raw`
       frame.addEventListener('load', function () { send({ type: 'frame', event: 'loaded', url: frame.src }); });
       frame.addEventListener('error', function () { send({ type: 'frame', event: 'error', url: frame.src }); });
 
-      document.getElementById('new-session').addEventListener('click', function () { action('new-session'); });
-      document.getElementById('pick-session').addEventListener('click', function () { action('pick-session'); });
-      document.getElementById('bind').addEventListener('click', function () { action('bind'); });
-      document.getElementById('bind-new').addEventListener('click', function () { action('bind-new'); });
-      document.getElementById('unbind').addEventListener('click', function () { action('unbind'); });
+      // Everything the DSH interface can do itself stays in the DSH
+      // interface; the header only carries what the extension adds: which
+      // folder is bound, and how to change it.
+      chip.addEventListener('click', function () { action('workspaceMenu'); });
       document.getElementById('reconnect').addEventListener('click', function () { action('reconnect'); });
       document.getElementById('open-browser').addEventListener('click', function () { action('open-browser'); });
 
       function setStatus(text, kind) {
-        if (!text) { status.classList.add('hidden'); status.textContent = ''; return; }
-        status.classList.remove('hidden');
-        status.textContent = text;
-        status.title = text;
+        chip.textContent = text || '';
+        chip.title = text || '';
         if (kind) dot.className = 'dot ' + kind;
       }
 
@@ -65,8 +61,6 @@ const WEBVIEW_SCRIPT = String.raw`
       function applyState(state) {
         var current = (state && state.status) || { kind: 'connecting' };
         var bound = state && state.boundPath;
-        pathLabel.textContent = bound || '未绑定目录';
-        pathLabel.title = bound || '';
         if (current.kind === 'ready') {
           var sessions = (state && state.sessions) || [];
           var workspaces = (state && state.workspaces) || [];
@@ -75,12 +69,12 @@ const WEBVIEW_SCRIPT = String.raw`
             return bound && entry.path && bound.toLowerCase() === entry.path.toLowerCase();
           });
           var parts = [];
-          parts.push(boundWorkspace ? '工作区 ' + boundWorkspace.title : (bound ? '工作区' : '未绑定目录'));
+          parts.push(boundWorkspace ? boundWorkspace.title : (bound ? '工作区' : '未绑定目录'));
           if (bound) parts.push(sessions.length + ' 个会话');
           if (!bound) parts.push('不会创建 dsh 工作区');
           if (hostDefault) parts.push('主机默认工作区仍存在');
           setStatus(parts.join(' · '), 'ready');
-          pathLabel.title = (bound || '') + ' · ' + sessions.length + ' 个会话';
+          chip.title = (bound || '未绑定目录') + (bound ? ' · ' + sessions.length + ' 个会话' : '') + '（点击更换工作区）';
           var proxyUrl = state && state.proxyUrl;
           if (proxyUrl && frame.src.indexOf(proxyUrl) !== 0) {
             // The frame was rendered before the proxy URL was known (the
@@ -183,10 +177,12 @@ export function renderDshHtml(webview: vscode.Webview, options: DshHtmlOptions):
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--vscode-charts-yellow); flex: none; }
   .dot.ready { background: var(--vscode-charts-green); }
   .dot.error { background: var(--vscode-charts-red); }
-  #path {
-    flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    color: var(--vscode-descriptionForeground);
+  .chip {
+    flex: 1 1 auto; min-width: 0; text-align: left; font-size: 12px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--vscode-descriptionForeground); padding: 2px 4px;
   }
+  .chip:hover { color: var(--vscode-foreground); }
   .actions { display: flex; gap: 2px; flex: none; }
   button {
     background: transparent; border: none; color: var(--vscode-foreground); cursor: pointer;
@@ -194,30 +190,18 @@ export function renderDshHtml(webview: vscode.Webview, options: DshHtmlOptions):
   }
   button:hover { background: var(--vscode-toolbar-hoverBackground); }
   button:disabled { opacity: .45; cursor: default; }
-  #status {
-    padding: 4px 10px; font-size: 11px; color: var(--vscode-descriptionForeground);
-    border-bottom: 1px solid var(--vscode-panel-border); white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  #status.hidden { display: none; }
   iframe { flex: 1 1 auto; width: 100%; border: none; background: var(--vscode-editor-background); }
 </style>
 </head>
 <body>
   <header>
     <span id="dot" class="dot"></span>
-    <span id="path" title="">未绑定目录</span>
+    <button id="workspace" class="chip" title="工作区菜单">未绑定目录</button>
     <span class="actions">
-      <button id="new-session" title="新建会话">＋</button>
-      <button id="pick-session" title="选择会话">会话</button>
-      <button id="bind" title="绑定当前目录">目录</button>
-      <button id="bind-new" title="新建工作目录">＋目录</button>
-      <button id="unbind" title="解除目录绑定">✕</button>
       <button id="reconnect" title="重新连接">⟳</button>
       <button id="open-browser" title="在浏览器中打开">↗</button>
     </span>
   </header>
-  <div id="status" class="hidden"></div>
   <iframe id="dsh-frame" src="${proxyUrl}/" allow="local-network-access; autoplay; clipboard-read; clipboard-write"></iframe>
   <script nonce="${nonce}">${script}</script>
 </body>
