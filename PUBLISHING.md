@@ -151,6 +151,11 @@ git push -u origin main
 工作流会执行 `npm ci → typecheck → build → npx @vscode/vsce publish --oidc`，
 凭据由 GitHub 的 OIDC 令牌换取，**仓库里不需要保存 PAT**。
 
+> ⚠️ `--oidc` 需要 **@vscode/vsce 4.x**（3.x 没有这个参数，工作流会报
+> `error: unknown option '--oidc'`）。仓库里的 `devDependencies` 固定为
+> `@vscode/vsce: ^4.1.1`，`npm ci` 会装上它；升级 vsce 后记得一起提交
+> `package-lock.json`。
+
 ### 3.4 之后的每次发布
 
 ```bash

@@ -19,6 +19,8 @@
   边栏与通知里会提示 `npm install -g @deepseek-ai/dsh`、桌面应用官网
   <https://harness.deepseek.com>，以及可以用 `dsh.remoteUrl` 连接远程实例。
 - 新增 `probe/remote-probe.mjs`：验证远程实例的候选列表、附着、不另起主机与提示文案。
+- 发布工具链：`@vscode/vsce` 升到 `^4.1.1`——只有 4.x 才支持可信发布需要的 `--oidc` 参数，
+  3.x 的工作流会在发布步骤报 `unknown option '--oidc'`。
 
 ## 0.3.1
 
