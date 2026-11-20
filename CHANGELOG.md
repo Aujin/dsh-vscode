@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.2
+
+- **修复侧边栏顶部一直显示"未绑定目录"**：webview 内联脚本里的正则表达式写在 TypeScript 模板字符串里，
+  反斜杠被当作转义吞掉，浏览器拿到的脚本存在语法错误，因此整个脚本从未执行——
+  目录绑定、会话数量、按钮全部没有生效（dsh 页面本身能显示，所以看起来像"只差一点点"）。
+  内联脚本改用 `String.raw` 书写，浏览器收到的 JavaScript 与源码逐字一致。
+- 新增 `probe/check-embedded-scripts.mjs`：对 webview 内联脚本与注入 SPA 的桥接脚本做语法检查，
+  防止这类问题再次发生。
+- 扩展日志同时写入 `globalStorage/aurumjin.dsh-vscode-extension/dsh-vscode.log`
+  （VS Code 的输出面板文件只在窗口关闭时才落盘），便于排查边栏问题。
+- webview 会向代理回报"脚本已运行"与脚本异常，代理把它们写进日志。
+- **连接远程 `dsh` 实例**：新增设置项 `dsh.remoteUrl` 与 `dsh.remoteToken`。
+  填了远程地址就只连那台主机（不再扫描本机、不再自动启动本地主机），
+  对方打印的带 `?token=` 的完整 URL 可以直接填进 `dsh.remoteUrl`；
+  修改设置后扩展自动重连。
+- **找不到主机时给出安装提示**：本机没有 `dsh web` 也没有 `dsh` 安装时，
+  边栏与通知里会提示 `npm install -g @deepseek-ai/dsh`、桌面应用官网
+  <https://harness.deepseek.com>，以及可以用 `dsh.remoteUrl` 连接远程实例。
+- 新增 `probe/remote-probe.mjs`：验证远程实例的候选列表、附着、不另起主机与提示文案。
+
 ## 0.3.1
 
 - **编辑区右上角的鲸鱼角标**：像 Codex / Claude Code 一样，编辑器标题栏右上角新增一枚黑色鲸鱼角标，

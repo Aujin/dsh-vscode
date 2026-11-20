@@ -73,6 +73,42 @@ export const BRIDGE_SCRIPT = `(() => {
       post({ type: 'session-changed', sessionId: id });
     }
   };
+
+  // Diagnostics: report what the SPA actually rendered, so a blank sidebar
+  // can be told apart from a failed boot without opening dev tools.
+  const errors = [];
+  window.addEventListener('error', (event) => {
+    errors.push(String(event.message || event.error || 'error'));
+    post({ type: 'page-error', message: String(event.message || event.error || 'error') });
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event && event.reason ? String(event.reason) : 'rejection';
+    errors.push(reason);
+    post({ type: 'page-error', message: reason });
+  });
+
+  let lastDiagnostic = '';
+  const diagnose = () => {
+    const boot = document.querySelector('[data-dsh-boot]');
+    let text = '';
+    try {
+      text = (document.body && document.body.innerText ? document.body.innerText : '').replace(/\\s+/g, ' ').trim().slice(0, 240);
+    } catch (error) {
+      text = '';
+    }
+    const state = JSON.stringify({
+      title: document.title,
+      url: window.location.href,
+      boot: boot ? (boot.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 160) : null,
+      text,
+      errors: errors.slice(-3),
+    });
+    if (state !== lastDiagnostic) {
+      lastDiagnostic = state;
+      post({ type: 'diagnostic', state: JSON.parse(state) });
+    }
+  };
+
   window.addEventListener('message', (event) => {
     const data = event.data;
     if (!data || data.source !== 'dsh-vscode') return;
@@ -80,6 +116,7 @@ export const BRIDGE_SCRIPT = `(() => {
     if (data.type === 'reload') window.location.reload();
   });
   window.setInterval(report, 500);
+  window.setInterval(diagnose, 1500);
   post({ type: 'ready', url: window.location.href });
 })();
 `

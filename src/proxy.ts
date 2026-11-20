@@ -22,10 +22,12 @@ export class DshProxy {
     void this.handleRequest(request, response)
   })
 
+  /** Port the proxy listens on; 0 until the server is bound. */
+  private port = 0
+
   private constructor(
     private readonly getInfo: () => DshHostInfo | undefined,
     private readonly logger: Logger,
-    private readonly port: number,
     /**
      * True while no folder is bound in VS Code. The host would then create its
      * own default workspace below the documents folder, which is exactly what
@@ -42,7 +44,7 @@ export class DshProxy {
     logger: Logger,
     shouldBlockDefaultWorkspace: () => boolean = () => false,
   ): Promise<DshProxy> {
-    const proxy = new DshProxy(getInfo, logger, 0, shouldBlockDefaultWorkspace)
+    const proxy = new DshProxy(getInfo, logger, shouldBlockDefaultWorkspace)
     await new Promise<void>((resolve, reject) => {
       proxy.server.once('error', reject)
       proxy.server.listen(0, '127.0.0.1', () => resolve())
@@ -51,9 +53,9 @@ export class DshProxy {
     if (address === null || typeof address === 'string') {
       throw new Error('proxy failed to bind a port')
     }
-    const port = address.port
-    logger.info(`proxy listening on http://127.0.0.1:${port}`)
-    return new DshProxy(getInfo, logger, port, shouldBlockDefaultWorkspace)
+    proxy.port = address.port
+    logger.info(`proxy listening on http://127.0.0.1:${address.port}`)
+    return proxy
   }
 
   /** URL the webview iframe loads. */
@@ -69,6 +71,21 @@ export class DshProxy {
         'cache-control': 'no-store',
       })
       response.end(BRIDGE_SCRIPT)
+      return
+    }
+
+    // Liveness/error channel of the embedded webview: the webview is sandboxed
+    // and its inline script may be rejected by the content security policy, so
+    // it reports through a plain image request instead of postMessage.
+    if (url.startsWith('/__webview-ping') || url.startsWith('/__webview-error')) {
+      const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : ''
+      if (url.startsWith('/__webview-error')) {
+        this.logger.warn(`webview script failed: ${decodeURIComponent(query.replace(/^msg=/, ''))}`)
+      } else {
+        this.logger.info('webview script is running')
+      }
+      response.writeHead(204, { 'cache-control': 'no-store' })
+      response.end()
       return
     }
 
@@ -119,6 +136,7 @@ export class DshProxy {
       (upstreamResponse) => {
         const headers = { ...upstreamResponse.headers }
         delete headers['transfer-encoding']
+        this.logger.info(`proxy ${request.method ?? 'GET'} ${url.split('?')[0]} -> ${upstreamResponse.statusCode ?? 0}`)
         // Keep the private-network access permission usable for the webview.
         headers['access-control-allow-private-network'] = 'true'
         const requestOrigin = request.headers.origin

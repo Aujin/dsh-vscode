@@ -23,6 +23,8 @@ function hostOptions(): DshHostOptions {
     autoStart: settings().get<boolean>('autoStart', true),
     autoStartPort: settings().get<number>('autoStartPort', 3080),
     executablePath: settings().get<string>('executablePath', '').trim() || undefined,
+    remoteUrl: settings().get<string>('remoteUrl', '').trim() || undefined,
+    remoteToken: settings().get<string>('remoteToken', '').trim() || undefined,
   }
 }
 
@@ -46,7 +48,7 @@ async function resolveAutoFolder(controller: DshController): Promise<string | un
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const logger = new Logger('DeepSeek Harness')
+  const logger = new Logger('DeepSeek Harness', context.globalStorageUri)
   context.subscriptions.push(logger)
 
   const dshHost = new DshHost(logger, hostOptions)
@@ -225,9 +227,51 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   )
 
+  // Reconnect when the host configuration changes - most importantly when a
+  // remote instance is configured or its token is corrected.
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      const watched = [
+        'dsh.remoteUrl',
+        'dsh.remoteToken',
+        'dsh.webUrl',
+        'dsh.executablePath',
+        'dsh.autoStart',
+        'dsh.autoStartPort',
+      ]
+      if (!watched.some((key) => event.affectsConfiguration(key))) return
+      logger.info('the host configuration changed, reconnecting')
+      void (async () => {
+        await controller.reconnect()
+        if (controller.current.status.kind !== 'ready') {
+          const message = controller.current.status.kind === 'error'
+            ? controller.current.status.message
+            : '未知错误'
+          void vscode.window.showErrorMessage(`DeepSeek Harness 连接失败：${message}`)
+          return
+        }
+        try {
+          const folder = await resolveAutoFolder(controller)
+          if (folder) {
+            const result = await controller.bindFolder(folder)
+            boundPath = result.workspaceId ? controller.current.boundPath : undefined
+          }
+        } catch (error) {
+          logger.error('automatic workspace binding failed', error)
+        }
+      })()
+    }),
+  )
+
   // Connect and bind in the background so activation stays fast.
   void (async () => {
     await controller.connect()
+    if (controller.current.status.kind === 'error') {
+      const message = controller.current.status.kind === 'error'
+        ? controller.current.status.message
+        : '未知错误'
+      void vscode.window.showErrorMessage(`DeepSeek Harness 连接失败：${message}`)
+    }
     try {
       const folder = await resolveAutoFolder(controller)
       if (folder) {
@@ -239,6 +283,30 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       logger.error('automatic workspace binding failed', error)
     }
   })()
+
+  // Development helper: `DSH_VSCODE_OPEN_VIEW=1` opens the sidebar right
+  // after activation, which is handy when a fresh VS Code profile is used to
+  // reproduce a rendering problem.
+  if (process.env.DSH_VSCODE_OPEN_VIEW) {
+    setTimeout(() => {
+      void (async () => {
+        const attempts: Array<[string, string]> = [
+          ['workbench.action.openView', 'dsh.dsh.chat'],
+          ['workbench.action.openView', 'dsh.chat'],
+          ['workbench.action.toggleAuxiliaryBar', ''],
+        ]
+        for (const [command, argument] of attempts) {
+          try {
+            await vscode.commands.executeCommand(command, ...(argument ? [argument] : []))
+            logger.info(`dev: ${command} ${argument} succeeded`)
+            await new Promise((resolve) => setTimeout(resolve, 1200))
+          } catch (error) {
+            logger.warn(`dev: ${command} ${argument} failed: ${(error as Error).message}`)
+          }
+        }
+      })()
+    }, 2000)
+  }
 }
 
 export async function deactivate(): Promise<void> {

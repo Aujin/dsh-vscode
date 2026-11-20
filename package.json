@@ -2,7 +2,7 @@
   "name": "dsh-vscode-extension",
   "displayName": "DeepSeek Harness Sidebar Embed",
   "description": "把 DeepSeek Harness (dsh) 嵌入 VS Code 右侧（辅助）边栏：工作区可复用当前打开的文件夹或新建文件夹，会话与 dsh web 实时同步。",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "Aurumjin",
   "license": "GPL-3.0-or-later",
   "icon": "media/dsh.png",
@@ -131,6 +131,16 @@
           "type": "string",
           "default": "",
           "markdownDescription": "dsh web 的地址，例如 `http://127.0.0.1:3080`。留空时依次尝试环境变量 `DSH_WEB_URL`、`dsh.autoStartPort`、常用端口（3080/8080/3000），最后扫描本机监听端口，自动发现正在运行的 `dsh web`。"
+        },
+        "dsh.remoteUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "远程 `dsh web` 的地址，例如 `http://192.168.1.20:3080`。填了就优先连接这台远程主机（不再扫描本机、也不再自动启动），会话与远程主机共享。把对方启动时打印的带 `?token=` 的完整 URL 填进来也可以。"
+        },
+        "dsh.remoteToken": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "远程 `dsh web` 的启动令牌（对方打印的 URL 里的 `token=`）。远程主机与本机的会话密钥不同，需要用它换一张浏览器会话 cookie。"
         },
         "dsh.autoStart": {
           "type": "boolean",

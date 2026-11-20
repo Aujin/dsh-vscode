@@ -32,8 +32,10 @@ console.log('discovery entry :', install.entry ?? '(none)')
 console.log('discovery node  :', install.node ?? '(none)')
 console.log('discovery shim  :', install.shim ?? '(none)')
 if (!install.entry || !install.node) {
-  console.error('FAIL: dsh was not discovered')
-  process.exit(1)
+  // The desktop app installation ships no command line launcher, so there is
+  // nothing to discover: the extension then attaches to the running host
+  // instead of spawning one. Only the spawn path needs the launcher.
+  console.log('note            : no dsh launcher found (desktop app install) - skipping the spawn check')
 }
 
 // 2. Attach to the running host.

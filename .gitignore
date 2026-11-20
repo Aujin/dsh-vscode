@@ -17,3 +17,7 @@ probe/whale-preview.html
 probe/whale-big.png
 probe/whale-render.png
 probe/viewbox.mjs
+probe/netstat-live.txt
+.vscode-dev/
+probe/.edge-profile*/
+probe/edge-*.txt

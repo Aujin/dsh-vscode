@@ -16,3 +16,4 @@ build.mjs
 .write-probe.txt
 *.vsix
 !dist/**
+.vscode-dev/**

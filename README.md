@@ -104,6 +104,34 @@ Windows 的开始菜单启动的 VS Code 只继承**系统 PATH**，看不到 `f
 只有所有地址都没找到主机时，扩展才会用 `dsh web --no-open` 自己启动一个；
 如果配置的端口已被占用，会自动改为让系统分配一个空闲端口。
 
+如果本机既没有正在运行的 `dsh web`，也没有安装 `dsh`，边栏会直接给出提示：
+
+```
+请先安装并启动 DeepSeek Harness：
+· npm install -g @deepseek-ai/dsh，然后运行 dsh web
+· 或安装桌面应用：https://harness.deepseek.com
+· 也可以在设置里填写 dsh.remoteUrl 连接远程实例
+```
+
+### 连接远程的 `dsh` 实例
+
+把 `dsh.remoteUrl` 填成远程主机的地址（例如 `http://192.168.1.20:3080`），
+扩展就只连这台远程主机：不再扫描本机端口，也不再在本机另起一个 `dsh web`，
+边栏里的会话就是远程主机上的会话。
+
+远程主机的会话密钥和本机不同，所以要用对方的**启动令牌**换一张会话 cookie：
+
+- 把对方启动 `dsh web` 时打印的完整 URL（带 `?token=…`）填进 `dsh.remoteUrl` 即可；
+- 或者地址填 `dsh.remoteUrl`，令牌单独填进 `dsh.remoteToken`。
+
+另外，远程主机需要信任这个来源，否则它的信任围栏会拒绝请求：
+
+```bash
+dsh web --host 0.0.0.0 --trusted-host 192.168.1.20:3080
+```
+
+修改这些设置项后扩展会自动重连。
+
 ---
 
 ## 使用
@@ -152,11 +180,26 @@ Windows 的开始菜单启动的 VS Code 只继承**系统 PATH**，看不到 `f
 
 ---
 
+## 日志
+
+命令面板里的 **DeepSeek Harness: 显示日志** 会打开输出面板。同一份日志还会写入文件：
+
+```
+%APPDATA%\Code\User\globalStorage\aurumjin.dsh-vscode-extension\dsh-vscode.log
+```
+
+（VS Code 的输出面板文件要等窗口关闭才落盘，所以排查问题时直接看这个文件更快。）
+日志里会记录：附着的 `dsh web` 地址、工作区绑定、会话数、webview 脚本是否正常运行。
+
+---
+
 ## 设置项
 
 | 键 | 默认值 | 说明 |
 | --- | --- | --- |
 | `dsh.webUrl` | `""` | `dsh web` 地址。留空时依次尝试 `DSH_WEB_URL`、`dsh.autoStartPort`、常用端口，最后扫描本机监听端口自动发现正在运行的 `dsh web` |
+| `dsh.remoteUrl` | `""` | 远程 `dsh web` 的地址，例如 `http://192.168.1.20:3080`。填了就只连这台远程主机（不再扫描本机，也不再自动启动） |
+| `dsh.remoteToken` | `""` | 远程实例的启动令牌（对方打印的 URL 里的 `token=`）。远程主机与本机的会话密钥不同，需要它换一张浏览器会话 cookie |
 | `dsh.autoStart` | `true` | 没有正在运行的 `dsh web` 时自动启动一个 |
 | `dsh.autoStartPort` | `3080` | 自动启动使用的端口（`0` = 由系统分配） |
 | `dsh.workspaceMode` | `currentFolder` | `currentFolder` 复用当前文件夹 / `newFolder` 新建文件夹 / `none` 不自动绑定 |

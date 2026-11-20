@@ -27,7 +27,19 @@ export interface DshHostOptions {
   autoStart: boolean
   autoStartPort: number
   executablePath?: string
+  /** Address of a remote `dsh web`, e.g. `http://192.168.1.20:3080`. */
+  remoteUrl?: string
+  /** Launch token of the remote instance, when it is not part of the URL. */
+  remoteToken?: string
 }
+
+/** Where DeepSeek Harness can be obtained, shown when no host was found. */
+export const INSTALL_HINT = [
+  '请先安装并启动 DeepSeek Harness：',
+  '· npm install -g @deepseek-ai/dsh，然后运行 dsh web',
+  '· 或安装桌面应用：https://harness.deepseek.com',
+  '· 也可以在设置里填写 dsh.remoteUrl 连接远程实例',
+].join('\n')
 
 /** A dsh installation that the extension can launch. */
 interface DshInstall {
@@ -190,30 +202,48 @@ export function parseListeningPorts(output: string): number[] {
  * A dsh host answers the index request with the SPA document, which carries
  * the injected boot payload; that marker identifies the host far more
  * reliably than the port number. The first port that answers wins.
+ *
+ * The probes run in small parallel batches: a machine usually listens on
+ * dozens of ports, and probing them one after another would delay the sidebar
+ * for minutes.
  */
 export async function detectDshHost(
   ports: number[],
   cookieFor: (authority: string) => string,
   timeoutMs = 1500,
+  batchSize = 8,
 ): Promise<number | undefined> {
   const seen = new Set<number>()
+  const candidates: number[] = []
   for (const port of ports) {
     if (!Number.isInteger(port) || port <= 0 || port > 65535) continue
     if (seen.has(port)) continue
     seen.add(port)
-    const authority = `127.0.0.1:${port}`
-    let cookie: string
-    try {
-      cookie = cookieFor(authority)
-    } catch {
-      continue
-    }
-    try {
-      const probe = await httpGet(`http://127.0.0.1:${port}/`, cookie, timeoutMs)
-      if (probe.status === 200 && probe.body.includes('__DSH_BOOT__')) return port
-    } catch {
-      // Not a dsh host (refused, timed out, or something else entirely).
-    }
+    candidates.push(port)
+  }
+
+  for (let index = 0; index < candidates.length; index += batchSize) {
+    const batch = candidates.slice(index, index + batchSize)
+    const results = await Promise.all(
+      batch.map(async (port) => {
+        const authority = `127.0.0.1:${port}`
+        let cookie: string
+        try {
+          cookie = cookieFor(authority)
+        } catch {
+          return undefined
+        }
+        try {
+          const probe = await httpGet(`http://127.0.0.1:${port}/`, cookie, timeoutMs)
+          if (probe.status === 200 && probe.body.includes('__DSH_BOOT__')) return port
+        } catch {
+          // Not a dsh host (refused, timed out, or something else entirely).
+        }
+        return undefined
+      }),
+    )
+    const hit = results.find((port) => port !== undefined)
+    if (hit !== undefined) return hit
   }
   return undefined
 }
@@ -261,16 +291,24 @@ export class DshHost {
       triedPorts.push(Number(url.port || (url.protocol === 'https:' ? 443 : 80)))
     }
 
-    const scanned = await this.scanForHosts(triedPorts)
+    const scanned = options.remoteUrl?.trim() ? undefined : await this.scanForHosts(triedPorts)
     if (scanned) {
       this.info = scanned
       this.logger.info(`attached to running dsh web at ${scanned.baseUrl} (port scan)`)
       return scanned
     }
 
+    if (options.remoteUrl?.trim()) {
+      throw new Error(
+        `无法连接远程 dsh web（${options.remoteUrl.trim()}）。` +
+          `请检查地址与网络，并确认对方用 --trusted-host 信任了这个来源；` +
+          `若远程实例使用了启动令牌，请把它填进 dsh.remoteToken。`,
+      )
+    }
+
     if (!options.autoStart) {
       throw new Error(
-        `未找到正在运行的 dsh web（已尝试 ${candidates.length} 个地址与本机监听端口），且已禁用自动启动（dsh.autoStart）。`,
+        `未找到正在运行的 dsh web（已尝试 ${candidates.length} 个地址与本机监听端口），且已禁用自动启动（dsh.autoStart）。\n${INSTALL_HINT}`,
       )
     }
 
@@ -291,11 +329,20 @@ export class DshHost {
     options: DshHostOptions,
   ): Array<{ baseUrl: string; token?: string; source: string }> {
     const candidates: Array<{ baseUrl: string; token?: string; source: string }> = []
-    const push = (raw: string | undefined, source: string) => {
+    const push = (raw: string | undefined, source: string, token?: string) => {
       if (!raw || !raw.trim()) return
-      const { baseUrl, token } = parseBaseUrl(raw.trim())
+      const parsed = parseBaseUrl(raw.trim())
+      const baseUrl = parsed.baseUrl
+      const launchToken = parsed.token ?? token
       if (candidates.some((candidate) => candidate.baseUrl === baseUrl)) return
-      candidates.push({ baseUrl, token, source })
+      candidates.push({ baseUrl, token: launchToken, source })
+    }
+
+    // An explicitly configured remote instance wins: the user asked for that
+    // host, and attaching to a different one would split the session list.
+    if (options.remoteUrl?.trim()) {
+      push(options.remoteUrl, 'dsh.remoteUrl', options.remoteToken?.trim() || undefined)
+      return candidates
     }
 
     push(options.webUrl, 'dsh.webUrl')
@@ -377,7 +424,7 @@ export class DshHost {
     if (secret) {
       const cookie = mintBrowserCookie(authority, secret)
       try {
-        const probe = await httpGet(`${baseUrl}/`, cookie)
+        const probe = await httpGet(`${baseUrl}/`, cookie, 2500)
         if (probe.status === 200) {
           return { baseUrl, hostname: url.hostname, port: Number(url.port || 80), authority, origin, cookie, mode: 'attached' }
         }
@@ -546,7 +593,7 @@ export class DshHost {
       return { command: 'node', args: [install.entry, ...webArgs], shell: true }
     }
 
-    return { command: 'dsh', args: webArgs, shell: true }
+    throw new Error(`本机没有找到 dsh 安装，无法自动启动 dsh web。\n${INSTALL_HINT}`)
   }
 
   /**
