@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3
+
+- 发布链路：`@vscode/vsce` 升到 `^4.1.1`，工作流用 `npx @vscode/vsce publish --oidc`
+  走"可信发布"（Trusted Publishing，OIDC 换取一次性凭据，仓库里不保存 PAT）。
+- 本次发布用于验证 GitHub Actions → Marketplace 的完整自动发布链路。
+
 ## 0.3.2
 
 - **修复侧边栏顶部一直显示"未绑定目录"**：webview 内联脚本里的正则表达式写在 TypeScript 模板字符串里，
