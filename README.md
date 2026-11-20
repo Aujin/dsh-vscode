@@ -46,17 +46,31 @@ VS Code 右侧边栏 (webview)
 
 ## 安装与构建
 
+**从商店安装（推荐）**：<https://marketplace.visualstudio.com/items?itemName=Aurumjin.dsh-vscode-extension>
+
+```
+扩展面板 → 搜索 "DeepSeek Harness Sidebar Embed" → 安装
+```
+
+也可以直接用命令行：
+
+```bash
+code --install-extension Aurumjin.dsh-vscode-extension
+```
+
+本地构建：
+
 ```bash
 npm install          # 只装依赖；构建用 TypeScript 编译器 API，不依赖 esbuild
 npm run typecheck    # 类型检查
 npm run build        # 编译到 dist/
-npm run package      # 打包成 .vsix（需要 @vscode/vsce）
+npm run package      # 打包成 .vsix（需要 @vscode/vsce 4.x）
 ```
 
 安装 `.vsix`：
 
 ```bash
-code --install-extension dsh-vscode-extension-0.3.0.vsix
+code --install-extension dsh-vscode-extension-0.3.3.vsix
 ```
 
 开发调试：
